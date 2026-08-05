@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dark Sidebar",
-  description: "A minimal dark dashboard sidebar",
+  title: "Beyond Marks AI Academy",
+  description: "Student projects, academy resources, access requests, and administration in one secure workspace.",
 };
 
 export default function RootLayout({

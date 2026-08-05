@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type IconProps = {
   className?: string;
@@ -57,20 +57,15 @@ function DocumentationIcon({ className }: IconProps) {
   );
 }
 
+function AvatarIcon({ className }: IconProps) {
+  return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4.5 20c.8-4.2 3.3-6.3 7.5-6.3s6.7 2.1 7.5 6.3" /><path d="m18 4 .6 1.4L20 6l-1.4.6L18 8l-.6-1.4L16 6l1.4-.6L18 4Z" /></svg>;
+}
+
 function SettingsIcon({ className }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
       <path d="M9.6 3.7h4.8l.55 2.05c.5.2.97.47 1.4.8l2.05-.57 2.4 4.04-1.5 1.5a7 7 0 0 1 0 1.96l1.5 1.5-2.4 4.04-2.05-.57c-.43.33-.9.6-1.4.8l-.55 2.05H9.6l-.55-2.05a7.4 7.4 0 0 1-1.4-.8l-2.05.57-2.4-4.04 1.5-1.5a7 7 0 0 1 0-1.96l-1.5-1.5L5.6 5.98l2.05.57c.43-.33.9-.6 1.4-.8L9.6 3.7Z" />
       <circle cx="12" cy="12.5" r="2.6" />
-    </svg>
-  );
-}
-
-function NotificationsIcon({ className }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M18 9.5a6 6 0 0 0-12 0c0 7-3 7-3 8.5h18c0-1.5-3-1.5-3-8.5Z" />
-      <path d="M9.5 21h5a2.75 2.75 0 0 1-5 0Z" />
     </svg>
   );
 }
@@ -107,24 +102,21 @@ function NavButton({ label, active, icon, onClick }: NavButtonProps) {
 
 const navigation = [
   { label: "Dashboard", Icon: DashboardIcon },
-  { label: "Request AI API", Icon: AiApiIcon },
-  { label: "Request Azure Services", Icon: AzureIcon },
+  { label: "Your API Access", Icon: AiApiIcon },
+  { label: "Your Azure Services", Icon: AzureIcon },
   { label: "Visualize", Icon: VisualizeIcon },
   { label: "Documentation", Icon: DocumentationIcon },
-  { label: "Notifications", Icon: NotificationsIcon },
+  { label: "Request Avatar", Icon: AvatarIcon },
 ];
 
-export function Sidebar() {
-  const [activeItem, setActiveItem] = useState("Dashboard");
-  const [showNotifications, setShowNotifications] = useState(false);
+type SidebarProps = {
+  activeItem: string;
+  onSelectItem: (label: string) => void;
+};
 
+export function Sidebar({ activeItem, onSelectItem }: SidebarProps) {
   const selectItem = (label: string) => {
-    setActiveItem(label);
-    if (label === "Notifications") {
-      setShowNotifications((isOpen) => !isOpen);
-      return;
-    }
-    setShowNotifications(false);
+    onSelectItem(label);
   };
 
   return (
@@ -158,60 +150,6 @@ export function Sidebar() {
         </div>
       </nav>
 
-      <section
-        className={`notifications-panel${
-          showNotifications ? " notifications-panel--open" : ""
-        }`}
-        role="dialog"
-        aria-label="Notifications"
-        aria-live="polite"
-        aria-hidden={!showNotifications}
-        inert={!showNotifications}
-      >
-          <header className="notifications-header">
-            <div>
-              <p className="notifications-kicker">UPDATES</p>
-              <h2>Notifications</h2>
-            </div>
-            <button
-              className="notifications-close"
-              type="button"
-              aria-label="Close notifications"
-              onClick={() => setShowNotifications(false)}
-            >
-              ×
-            </button>
-          </header>
-
-          <div className="notifications-list">
-            <article className="notification-item notification-item--new">
-              <span className="notification-dot" />
-              <div>
-                <h3>AI API request approved</h3>
-                <p>Your API access is ready to use.</p>
-                <time>Just now</time>
-              </div>
-            </article>
-
-            <article className="notification-item">
-              <span className="notification-dot" />
-              <div>
-                <h3>Azure service updated</h3>
-                <p>Your deployment configuration was saved.</p>
-                <time>18 minutes ago</time>
-              </div>
-            </article>
-
-            <article className="notification-item">
-              <span className="notification-dot" />
-              <div>
-                <h3>New dashboard insights</h3>
-                <p>Your latest visualization is available.</p>
-                <time>2 hours ago</time>
-              </div>
-            </article>
-          </div>
-      </section>
     </aside>
   );
 }
