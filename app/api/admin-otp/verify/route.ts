@@ -7,10 +7,10 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const { requestId, code } = await request.json() as { requestId?: string; code?: string };
-    if (!requestId || !code || !/^\d{6}$/.test(code) || !verifyOtp(requestId, code)) {
+    if (!requestId || !code || !/^\d{6}$/.test(code) || !(await verifyOtp(requestId, code))) {
       return NextResponse.json({ error: "The code is incorrect, expired, or has too many attempts." }, { status: 401 });
     }
-    const secret = getAdminSessionSecret();
+    const secret = await getAdminSessionSecret();
     const expires = Date.now() + 8 * 60 * 60_000;
     const value = `${expires}.${createHmac("sha256", secret).update(String(expires)).digest("hex")}`;
     const response = NextResponse.json({ verified: true });

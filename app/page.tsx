@@ -38,6 +38,7 @@ import { BackgroundAnimation } from "../components/background-animation";
 import { NotificationsMenu } from "../components/notifications-menu";
 import { RequestAccessMenu } from "../components/request-access-menu";
 import { AdminDashboard, type GeneratedAvatar, type ManagedStudent } from "../components/admin-dashboard";
+import { formatQuota, type AccessAllocation, type AccessRequest, type NewAccessRequest, type QuotaUnit, type StudentNotification } from "../lib/access-automation";
 
 type AccessRecord = {
   id: string;
@@ -48,7 +49,7 @@ type AccessRecord = {
   remaining: string;
   progress: number;
   expiry: string;
-  status: "Active" | "Expiring soon";
+  status: "Active" | "Expiring soon" | "Exhausted";
   tone: string;
   icon: LucideIcon;
 };
@@ -821,6 +822,10 @@ export default function Home() {
   const [managedStudents, setManagedStudents] = useState<ManagedStudent[]>(initialStudents);
   const [studentAccounts, setStudentAccounts] = useState<StudentAccount[]>([]);
   const [generatedAvatars, setGeneratedAvatars] = useState<GeneratedAvatar[]>([]);
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([]);
+  const [allocations, setAllocations] = useState<AccessAllocation[]>([]);
+  const [studentNotifications, setStudentNotifications] = useState<StudentNotification[]>([]);
+  const [automationStorageReady, setAutomationStorageReady] = useState(false);
   const [studentStorageReady, setStudentStorageReady] = useState(false);
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -863,7 +868,47 @@ export default function Home() {
     try { localStorage.setItem("beyondmarks_generated_avatars", JSON.stringify(generatedAvatars)); } catch { /* Keep large images available for this session. */ }
   }, [generatedAvatars, studentStorageReady]);
 
-  const records: AccessRecord[] = useMemo(() => [], [activeItem, currentStudentEmail]);
+  useEffect(() => {
+    try {
+      setAccessRequests(JSON.parse(localStorage.getItem("beyondmarks_access_requests") || "[]"));
+      setAllocations(JSON.parse(localStorage.getItem("beyondmarks_access_allocations") || "[]"));
+      setStudentNotifications(JSON.parse(localStorage.getItem("beyondmarks_student_notifications") || "[]"));
+    } catch {
+      localStorage.removeItem("beyondmarks_access_requests");
+      localStorage.removeItem("beyondmarks_access_allocations");
+      localStorage.removeItem("beyondmarks_student_notifications");
+    } finally {
+      setAutomationStorageReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!automationStorageReady) return;
+    localStorage.setItem("beyondmarks_access_requests", JSON.stringify(accessRequests));
+    localStorage.setItem("beyondmarks_access_allocations", JSON.stringify(allocations));
+    localStorage.setItem("beyondmarks_student_notifications", JSON.stringify(studentNotifications));
+  }, [accessRequests, allocations, studentNotifications, automationStorageReady]);
+
+  const records: AccessRecord[] = useMemo(() => allocations
+    .filter((allocation) => allocation.studentEmail.toLowerCase() === currentStudentEmail && (activeItem === "Your API Access" ? allocation.kind === "API" : activeItem === "Your Azure Services" ? allocation.kind === "Azure" : true))
+    .map((allocation) => {
+      const remaining = Math.max(0, allocation.quota - allocation.used);
+      const progress = allocation.quota > 0 ? Math.round((remaining / allocation.quota) * 100) : 0;
+      const expiresSoon = new Date(allocation.expiresAt).getTime() - Date.now() < 7 * 86_400_000;
+      return {
+        id: allocation.id,
+        name: allocation.serviceName,
+        type: allocation.kind,
+        identifier: "Academy managed",
+        location: allocation.kind === "Azure" ? "Central India" : "API gateway",
+        remaining: `${formatQuota(remaining, allocation.unit)} remaining`,
+        progress,
+        expiry: new Date(allocation.expiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        status: allocation.status === "Exhausted" ? "Exhausted" : expiresSoon ? "Expiring soon" : "Active",
+        tone: allocation.kind === "Azure" ? "blue" : "purple",
+        icon: allocation.kind === "Azure" ? Cloud : Bot,
+      };
+    }), [activeItem, allocations, currentStudentEmail]);
 
   const title = activeItem === "Your API Access"
     ? "Your API access"
@@ -952,6 +997,57 @@ export default function Home() {
   };
 
   const currentStudent = managedStudents.find((student) => student.email.toLowerCase() === currentStudentEmail);
+  const currentNotifications = studentNotifications.filter((notification) => notification.studentEmail.toLowerCase() === currentStudentEmail);
+
+  const submitAccessRequest = async (request: NewAccessRequest) => {
+    const alreadyRequested = accessRequests.some((entry) => entry.studentEmail.toLowerCase() === currentStudentEmail && entry.serviceName === request.serviceName && entry.status !== "Rejected");
+    if (alreadyRequested) throw new Error("You already have a pending or approved request for this service.");
+    const createdAt = new Date().toISOString();
+    const requestId = crypto.randomUUID();
+    setAccessRequests((current) => [{
+      ...request,
+      id: requestId,
+      studentId: currentStudent?.id || "student-" + currentStudentEmail,
+      studentName: currentStudentName,
+      studentEmail: currentStudentEmail,
+      status: "Pending",
+      requestedAt: createdAt,
+    }, ...current]);
+    setStudentNotifications((current) => [{
+      id: crypto.randomUUID(), studentEmail: currentStudentEmail, title: "Request received",
+      message: "Your " + request.serviceName + " request was sent to the administrator for review.", createdAt, unread: true, type: "request",
+    }, ...current]);
+  };
+
+  const approveAccessRequest = (requestId: string, quota: number, unit: QuotaUnit, expiresAt: string) => {
+    const request = accessRequests.find((entry) => entry.id === requestId);
+    if (!request || request.status !== "Pending") return;
+    const now = new Date().toISOString();
+    setAccessRequests((current) => current.map((entry) => entry.id === requestId ? { ...entry, status: "Approved", reviewedAt: now } : entry));
+    setAllocations((current) => [{
+      id: crypto.randomUUID(), requestId, studentId: request.studentId, studentEmail: request.studentEmail,
+      serviceName: request.serviceName, kind: request.kind, quota, used: 0, unit, startsAt: now,
+      expiresAt, status: "Active", warningLevelsSent: [],
+    }, ...current]);
+    setManagedStudents((current) => current.map((student) => student.id === request.studentId && !student.resources.includes(request.serviceName) ? { ...student, resources: [...student.resources, request.serviceName] } : student));
+    setStudentNotifications((current) => [{
+      id: crypto.randomUUID(), studentEmail: request.studentEmail, title: request.serviceName + " approved - congratulations!",
+      message: "Your access is active with " + formatQuota(quota, unit) + " available.", createdAt: now, unread: true, type: "approval",
+    }, ...current]);
+  };
+
+  const rejectAccessRequest = (requestId: string, reason: string) => {
+    const request = accessRequests.find((entry) => entry.id === requestId);
+    if (!request || request.status !== "Pending") return;
+    const now = new Date().toISOString();
+    setAccessRequests((current) => current.map((entry) => entry.id === requestId ? { ...entry, status: "Rejected", rejectionReason: reason, reviewedAt: now } : entry));
+    setStudentNotifications((current) => [{
+      id: crypto.randomUUID(), studentEmail: request.studentEmail, title: request.serviceName + " request needs revision",
+      message: reason, createdAt: now, unread: true, type: "request",
+    }, ...current]);
+  };
+
+  const markCurrentNotificationsRead = () => setStudentNotifications((current) => current.map((notification) => notification.studentEmail.toLowerCase() === currentStudentEmail ? { ...notification, unread: false } : notification));
 
   const openStudentDashboard = (email: string) => {
     const student = managedStudents.find((entry) => entry.email.toLowerCase() === email.trim().toLowerCase());
@@ -988,7 +1084,7 @@ export default function Home() {
   };
 
   if (appView === "auth") return <AuthScreen onContinue={(destination = "user") => { if (destination === "user") { setCurrentStudentName("Demo Student"); setCurrentStudentEmail("demo@beyondmarks.ai"); } setAppView(destination); }} onSignup={requestSignup} onSignin={signInStudent} onStudentAuthenticated={openStudentDashboard} />;
-  if (appView === "admin") return <AdminDashboard students={managedStudents} onAddStudent={addManagedStudent} onConfirmStudent={confirmManagedStudent} avatars={generatedAvatars} onAddAvatar={(avatar) => setGeneratedAvatars((current) => [avatar, ...current])} onApproveAvatar={approveAvatarAccess} onSetStudentPin={setStudentSecurityPin} onLogout={() => setAppView("auth")} />;
+  if (appView === "admin") return <AdminDashboard students={managedStudents} onAddStudent={addManagedStudent} onConfirmStudent={confirmManagedStudent} avatars={generatedAvatars} onAddAvatar={(avatar) => setGeneratedAvatars((current) => [avatar, ...current])} onApproveAvatar={approveAvatarAccess} onSetStudentPin={setStudentSecurityPin} accessRequests={accessRequests} onApproveAccess={approveAccessRequest} onRejectAccess={rejectAccessRequest} onLogout={() => setAppView("auth")} />;
 
   return (
     <main className="dashboard-shell">
@@ -997,8 +1093,8 @@ export default function Home() {
       <header className="welcome-section">
         <h1 id="welcome-title" className="welcome-title">Welcome, {currentStudentName}!</h1>
         <div className="header-actions">
-          <RequestAccessMenu onSecurityCheck={requestSecurityCheck} />
-          <NotificationsMenu />
+          <RequestAccessMenu onSecurityCheck={requestSecurityCheck} onSubmitRequest={submitAccessRequest} />
+          <NotificationsMenu notifications={currentNotifications} onMarkAllRead={markCurrentNotificationsRead} />
         </div>
       </header>
 
@@ -1015,7 +1111,7 @@ export default function Home() {
           <div>
             <div className="access-eyebrow-row">
               <p>ACCESS MANAGEMENT</p>
-              <span>Demo data</span>
+              <span>Automated quotas</span>
             </div>
             <h2 id="access-title">{title}</h2>
             <p className="access-dashboard-description">
@@ -1068,7 +1164,7 @@ export default function Home() {
                   </td>
                   <td>{record.expiry}</td>
                   <td>
-                    <span className={`access-status${record.status === "Expiring soon" ? " access-status--warning" : ""}`}>
+                    <span className={`access-status${record.status !== "Active" ? " access-status--warning" : ""}`}>
                       <span />{record.status}
                     </span>
                   </td>

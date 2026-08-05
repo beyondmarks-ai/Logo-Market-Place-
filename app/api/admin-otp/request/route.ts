@@ -3,6 +3,7 @@ import { SmsClient } from "@azure/communication-sms";
 import { DefaultAzureCredential } from "@azure/identity";
 import { NextResponse } from "next/server";
 import { createOtp, discardOtp, maskEmail, maskPhone } from "../../../../lib/admin-otp";
+import { getAdminPassword } from "../../../../lib/keyless-config";
 
 export const runtime = "nodejs";
 
@@ -21,13 +22,12 @@ function normalizeIdentifier(value: string) {
 export async function POST(request: Request) {
   try {
     const body = await request.json() as { identifier?: string; password?: string };
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const connectionString = process.env.AZURE_COMMUNICATION_CONNECTION_STRING;
+    const adminPassword = await getAdminPassword();
     const endpoint = process.env.AZURE_COMMUNICATION_ENDPOINT;
     const identifier = normalizeIdentifier(body.identifier ?? "");
     const channel = approvedEmails.includes(identifier) ? "email" : approvedPhones.includes(identifier) ? "sms" : null;
 
-    if (!adminPassword || (!connectionString && !endpoint)) {
+    if (!endpoint) {
       return NextResponse.json({ error: "Admin OTP is not configured on the server yet." }, { status: 503 });
     }
     if (!channel || body.password !== adminPassword) {
@@ -38,15 +38,13 @@ export async function POST(request: Request) {
     }
 
     const identity = `${identifier}:${channel}`;
-    const { requestId, code } = createOtp(identity);
+    const { requestId, code } = await createOtp(identity);
 
     try {
       if (channel === "email") {
         const sender = process.env.AZURE_EMAIL_SENDER;
         if (!sender) throw new Error("Email verification is not configured yet.");
-        const emailClient = connectionString
-          ? new EmailClient(connectionString)
-          : new EmailClient(endpoint!, new DefaultAzureCredential());
+        const emailClient = new EmailClient(endpoint!, new DefaultAzureCredential());
         const poller = await emailClient.beginSend({
           senderAddress: sender,
           recipients: { to: [{ address: identifier }] },
@@ -62,9 +60,7 @@ export async function POST(request: Request) {
 
       const sender = process.env.AZURE_SMS_FROM;
       if (!sender) throw new Error("Mobile verification is not configured yet.");
-      const smsClient = connectionString
-        ? new SmsClient(connectionString)
-        : new SmsClient(endpoint!, new DefaultAzureCredential());
+      const smsClient = new SmsClient(endpoint!, new DefaultAzureCredential());
       const results = await smsClient.send({
         from: sender,
         to: [identifier],

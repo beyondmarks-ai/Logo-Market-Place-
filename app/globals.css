@@ -3379,3 +3379,38 @@ button {
     width: min(275px, calc(100vw - 76px));
   }
 }
+
+
+/* Access automation workflow */
+.model-picker-footer { display: grid; gap: 12px; }
+.access-request-details { display: grid; gap: 10px; text-align: left; }
+.access-request-details label { display: grid; gap: 6px; }
+.access-request-details label > span { color: #958b9d; font-size: 10px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
+.access-request-details input,
+.access-request-details textarea { width: 100%; box-sizing: border-box; border: 1px solid rgba(255,255,255,.09); border-radius: 9px; outline: 0; background: rgba(255,255,255,.035); color: #e8e1eb; font: inherit; font-size: 12px; padding: 10px 11px; resize: vertical; }
+.access-request-details input:focus,
+.access-request-details textarea:focus { border-color: rgba(169,105,219,.55); box-shadow: 0 0 0 3px rgba(135,75,180,.1); }
+.access-request-error { margin: 0; color: #ef9292; font-size: 11px; line-height: 1.45; }
+.notifications-empty { padding: 28px 20px; color: #827989; font-size: 12px; text-align: center; }
+.notifications-popover-header button:disabled { cursor: default; opacity: .45; }
+.admin-access-requests-panel { margin-bottom: 22px; overflow: hidden; }
+.admin-access-requests-panel > header { display: flex; align-items: center; justify-content: space-between; padding: 20px; }
+.admin-access-requests-panel > header p { margin: 0 0 5px; color: #9d6fc5; font-size: 10px; letter-spacing: .12em; }
+.admin-access-requests-panel > header h2 { margin: 0; color: #e6dfea; font-size: 18px; }
+.admin-request-count { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(230,169,91,.15); border-radius: 999px; background: rgba(230,169,91,.07); color: #dfaa67; font-size: 11px; padding: 7px 10px; }
+.admin-request-count svg { width: 13px; }
+.admin-access-requests-panel .admin-table-wrap { border: 0; border-top: 1px solid rgba(255,255,255,.055); border-radius: 0; }
+.admin-access-requests-panel .admin-table td:nth-child(3) { max-width: 300px; }
+.admin-access-requests-panel .admin-table td:nth-child(3) small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-request-actions { display: flex; gap: 6px; }
+.admin-request-actions button { padding: 8px 10px; border: 1px solid rgba(169,105,219,.18); border-radius: 8px; background: rgba(169,105,219,.08); color: #c49be4; cursor: pointer; font-size: 11px; }
+.admin-request-actions .admin-reject-button { border-color: rgba(231,111,111,.14); background: rgba(231,111,111,.06); color: #dc8c8c; }
+.admin-reviewed-label { color: #77707b; font-size: 11px; }
+.admin-empty-requests { padding: 24px; color: #817985; text-align: center; }
+.admin-review-summary { display: grid; gap: 5px; padding: 14px; border: 1px solid rgba(255,255,255,.06); border-radius: 10px; background: rgba(255,255,255,.025); }
+.admin-review-summary strong { color: #e1d9e5; }
+.admin-review-summary span { color: #8f8694; font-size: 12px; line-height: 1.5; }
+.admin-quota-preview { display: flex; align-items: center; gap: 10px; padding: 13px; border-radius: 10px; background: rgba(74,190,132,.07); color: #78dca8; }
+.admin-quota-preview svg { width: 18px; }
+.admin-quota-preview span { display: grid; color: #9eaaa2; font-size: 11px; }
+.admin-quota-preview strong { color: #80dfae; font-size: 14px; }

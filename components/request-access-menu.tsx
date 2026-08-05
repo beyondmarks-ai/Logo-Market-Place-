@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { NewAccessRequest } from "../lib/access-automation";
 
 function ApiIcon() {
   return (
@@ -549,17 +550,32 @@ function describeItem(item: string, branchId: string) {
   return branchFallbacks[branchId] ?? "A selectable API capability available for your application.";
 }
 
-export function RequestAccessMenu({ onSecurityCheck }: { onSecurityCheck?: (action: () => void, title: string) => void }) {
+type RequestAccessMenuProps = {
+  onSecurityCheck?: (action: () => void, title: string) => void;
+  onSubmitRequest?: (request: NewAccessRequest) => Promise<void> | void;
+};
+
+export function RequestAccessMenu({ onSecurityCheck, onSubmitRequest }: RequestAccessMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<"root" | "models" | "azure">("root");
   const [openBranch, setOpenBranch] = useState<string | null>("openai");
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [modelQuery, setModelQuery] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [intendedUse, setIntendedUse] = useState("");
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
   const closeMenu = () => {
     setIsOpen(false);
-    window.setTimeout(() => setView("root"), 180);
+    window.setTimeout(() => {
+      setView("root");
+      setSelectedModel(null);
+      setProjectName("");
+      setIntendedUse("");
+      setSubmitError("");
+    }, 180);
   };
 
   useEffect(() => {
@@ -593,6 +609,28 @@ export function RequestAccessMenu({ onSecurityCheck }: { onSecurityCheck?: (acti
   };
 
   const activeBranches = view === "azure" ? azureServiceBranches : modelBranches;
+
+  const submitRequest = async () => {
+    if (!selectedModel || projectName.trim().length < 2 || intendedUse.trim().length < 10) {
+      setSubmitError("Add a project name and at least 10 characters describing how you will use this access.");
+      return;
+    }
+    setSubmitBusy(true);
+    setSubmitError("");
+    try {
+      await onSubmitRequest?.({
+        serviceName: selectedModel,
+        kind: view === "azure" ? "Azure" : "API",
+        projectName: projectName.trim(),
+        intendedUse: intendedUse.trim(),
+      });
+      closeMenu();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "The request could not be submitted.");
+    } finally {
+      setSubmitBusy(false);
+    }
+  };
 
   return (
     <div className="request-access-menu" ref={menuRef}>
@@ -716,8 +754,15 @@ export function RequestAccessMenu({ onSecurityCheck }: { onSecurityCheck?: (acti
             </div>
 
             <footer className="model-picker-footer">
-              <button type="button" disabled={!selectedModel} onClick={closeMenu}>
-                {selectedModel ? `Continue with ${selectedModel}` : "Select an option to continue"}
+              {selectedModel && (
+                <div className="access-request-details">
+                  <label><span>Project name</span><input value={projectName} onChange={(event) => { setProjectName(event.target.value); setSubmitError(""); }} placeholder="My learning project" /></label>
+                  <label><span>How will you use it?</span><textarea rows={3} value={intendedUse} onChange={(event) => { setIntendedUse(event.target.value); setSubmitError(""); }} placeholder="Explain the project and expected usage..." /></label>
+                  {submitError && <p className="access-request-error">{submitError}</p>}
+                </div>
+              )}
+              <button type="button" disabled={!selectedModel || submitBusy} onClick={submitRequest}>
+                {submitBusy ? "Submitting request..." : selectedModel ? `Request ${selectedModel}` : "Select an option to continue"}
               </button>
             </footer>
           </div>

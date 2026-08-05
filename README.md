@@ -45,10 +45,11 @@ This runs TypeScript validation followed by a production build.
 
 ## Azure configuration
 
-The server uses `DefaultAzureCredential`, allowing local development through Azure CLI and production through a managed identity. Required settings are documented in [.env.example](.env.example).
+The server uses `DefaultAzureCredential`, allowing local development through Azure CLI and production through a managed identity. Azure service access is keyless, and administrator/signing secrets are retrieved from Azure Key Vault. Required non-secret settings are documented in [.env.example](.env.example).
 
 Relevant Azure services:
 
+- Azure Key Vault for administrator and signing secrets, accessed without vault keys
 - Azure Communication Services and Email Communication Services for administrator OTP
 - Microsoft Foundry/Azure AI Services with a `gpt-image-2` deployment for avatar generation
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { StudentNotification } from "../lib/access-automation";
 
 function BellIcon() {
   return (
@@ -11,30 +12,23 @@ function BellIcon() {
   );
 }
 
-const notifications = [
-  {
-    title: "AI API request approved",
-    message: "Your API access is ready to use.",
-    time: "Just now",
-    unread: true,
-  },
-  {
-    title: "Azure service updated",
-    message: "Your deployment configuration was saved.",
-    time: "18 minutes ago",
-    unread: false,
-  },
-  {
-    title: "New dashboard insights",
-    message: "Your latest visualization is available.",
-    time: "2 hours ago",
-    unread: false,
-  },
-];
+type NotificationsMenuProps = {
+  notifications: StudentNotification[];
+  onMarkAllRead: () => void;
+};
 
-export function NotificationsMenu() {
+function notificationTime(createdAt: string) {
+  const elapsed = Math.max(0, Date.now() - new Date(createdAt).getTime());
+  if (elapsed < 60_000) return "Just now";
+  if (elapsed < 3_600_000) return `${Math.floor(elapsed / 60_000)} minutes ago`;
+  if (elapsed < 86_400_000) return `${Math.floor(elapsed / 3_600_000)} hours ago`;
+  return new Date(createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+export function NotificationsMenu({ notifications, onMarkAllRead }: NotificationsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const unreadCount = notifications.filter((notification) => notification.unread).length;
 
   useEffect(() => {
     const closeMenu = (event: PointerEvent) => {
@@ -58,13 +52,13 @@ export function NotificationsMenu() {
       <button
         className="notifications-trigger"
         type="button"
-        aria-label="Notifications, 1 unread"
+        aria-label={`Notifications, ${unreadCount} unread`}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={() => setIsOpen((open) => !open)}
       >
         <BellIcon />
-        <span className="notifications-unread" />
+        {unreadCount > 0 && <span className="notifications-unread" />}
       </button>
 
       <section
@@ -79,22 +73,23 @@ export function NotificationsMenu() {
             <p>Inbox</p>
             <h2>Notifications</h2>
           </div>
-          <button type="button" onClick={() => setIsOpen(false)}>
+          <button type="button" disabled={unreadCount === 0} onClick={onMarkAllRead}>
             Mark all as read
           </button>
         </header>
 
         <div className="notifications-popover-list">
+          {notifications.length === 0 && <div className="notifications-empty">No notifications yet.</div>}
           {notifications.map((notification) => (
             <article
               className={`notification-entry${notification.unread ? " notification-entry--unread" : ""}`}
-              key={notification.title}
+              key={notification.id}
             >
               <span className="notification-entry-dot" />
               <div>
                 <h3>{notification.title}</h3>
                 <p>{notification.message}</p>
-                <time>{notification.time}</time>
+                <time>{notificationTime(notification.createdAt)}</time>
               </div>
             </article>
           ))}

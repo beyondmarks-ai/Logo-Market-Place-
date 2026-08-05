@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { AdminSidebar } from "./admin-sidebar";
 import { BackgroundAnimation } from "./background-animation";
+import { AdminAccessRequests } from "./admin-access-requests";
+import type { AccessRequest, QuotaUnit } from "../lib/access-automation";
 
 export type ManagedStudent = {
   id: string;
@@ -50,6 +52,9 @@ type AdminDashboardProps = {
   onAddAvatar: (avatar: GeneratedAvatar) => void;
   onApproveAvatar: (studentId: string) => void;
   onSetStudentPin: (studentId: string, pin: string) => Promise<void>;
+  accessRequests: AccessRequest[];
+  onApproveAccess: (requestId: string, quota: number, unit: QuotaUnit, expiresAt: string) => void;
+  onRejectAccess: (requestId: string, reason: string) => void;
   onLogout: () => void;
 };
 
@@ -62,7 +67,7 @@ function AdminPageHeader({ eyebrow, title, description, action }: { eyebrow: str
   );
 }
 
-export function AdminDashboard({ students, onAddStudent, onConfirmStudent, avatars, onAddAvatar, onApproveAvatar, onSetStudentPin, onLogout }: AdminDashboardProps) {
+export function AdminDashboard({ students, onAddStudent, onConfirmStudent, avatars, onAddAvatar, onApproveAvatar, onSetStudentPin, accessRequests, onApproveAccess, onRejectAccess, onLogout }: AdminDashboardProps) {
   const [activeItem, setActiveItem] = useState("Admin Dashboard");
   const [studentQuery, setStudentQuery] = useState("");
   const [showStudentForm, setShowStudentForm] = useState(false);
@@ -269,7 +274,8 @@ export function AdminDashboard({ students, onAddStudent, onConfirmStudent, avata
 
         {activeItem === "Manage Resources" && (
           <section className="admin-page">
-            <AdminPageHeader eyebrow="RESOURCE CONTROL" title="Manage resources" description="Monitor shared API credits, services, assignments, and remaining capacity." action={<button className="admin-primary-action" type="button">+ Add resource</button>} />
+            <AdminPageHeader eyebrow="RESOURCE CONTROL" title="Manage resources" description="Review student requests, assign quotas, and monitor remaining capacity." action={<button className="admin-primary-action" type="button">+ Add resource</button>} />
+            <AdminAccessRequests requests={accessRequests} onApprove={onApproveAccess} onReject={onRejectAccess} />
             <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Resource</th><th>Type</th><th>Assigned</th><th>Remaining</th><th>Status</th><th>Action</th></tr></thead><tbody>
               {resources.map((resource) => <tr key={resource.name}><td><strong>{resource.name}</strong><small>Shared workspace resource</small></td><td>{resource.type}</td><td>{resource.assigned}</td><td><div className="admin-resource-remaining"><span>{resource.remaining}</span><i><b style={{ width: resource.remaining }} /></i></div></td><td><span className={`admin-table-status${resource.status === "Low" ? " admin-table-status--review" : ""}`}>{resource.status}</span></td><td><button type="button">Configure</button></td></tr>)}
             </tbody></table></div>
