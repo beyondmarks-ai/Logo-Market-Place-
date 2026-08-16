@@ -4,11 +4,11 @@ import { useState } from "react";
 import { ArrowLeft, BookOpen, Check, Code2, Copy, Gauge, KeyRound, ShieldCheck } from "lucide-react";
 
 const examples = {
-  search: `curl "https://your-domain.com/api/v1/brands?query=microsoft&limit=10" \\
+  search: `curl "https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/brands?query=microsoft&limit=10" \\
   -H "Authorization: Bearer lmp_live_YOUR_API_KEY"`,
-  detail: `curl "https://your-domain.com/api/v1/brands/microsoft" \\
+  detail: `curl "https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/brands/microsoft" \\
   -H "Authorization: Bearer lmp_live_YOUR_API_KEY"`,
-  customize: `curl -G "https://your-domain.com/api/v1/brands/github/download" \\
+  customize: `curl -G "https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/brands/github/download" \\
   -H "Authorization: Bearer lmp_live_YOUR_API_KEY" \\
   --data-urlencode "variant=mono" \\
   --data-urlencode "gradientStart=#050405" \\
@@ -52,9 +52,9 @@ export function ApiDocs() {
 
       <section className="api-docs-hero" aria-labelledby="api-title">
         <div>
-          <p className="api-eyebrow">DEVELOPER PLATFORM Â· V1</p>
+          <p className="api-eyebrow">DEVELOPER PLATFORM Ã‚Â· V1</p>
           <h1 id="api-title">Brand assets through one reliable API.</h1>
-          <p>Search the catalog, inspect available variants, and download production-ready SVGsâ€”including custom mono colors and gradients.</p>
+          <p>Search the catalog, inspect available variants, and download production-ready SVGsÃ¢â‚¬â€including custom mono colors and gradients.</p>
           <div className="api-hero-actions">
             <a href="#quickstart">Start integrating</a>
             <a href="/api/v1/health" target="_blank" rel="noreferrer">Check API status</a>
@@ -79,14 +79,14 @@ export function ApiDocs() {
 
         <article className="api-docs-content">
           <section id="quickstart">
-            <p className="api-section-kicker">01 Â· QUICKSTART</p>
+            <p className="api-section-kicker">01 Ã‚Â· QUICKSTART</p>
             <h2>Find a brand in seconds</h2>
             <p>Send your API key from a trusted server environment. Search accepts brand names, aliases, categories, and keywords.</p>
             <CodeExample id="search" label="Search brands" />
           </section>
 
           <section id="authentication">
-            <p className="api-section-kicker">02 Â· AUTHENTICATION</p>
+            <p className="api-section-kicker">02 Ã‚Â· AUTHENTICATION</p>
             <h2>Use a Bearer API key</h2>
             <div className="api-notice"><KeyRound aria-hidden="true" /><p><strong>Keep keys server-side.</strong> Never embed a live key in browser JavaScript, mobile bundles, or public repositories.</p></div>
             <p>Include the key on every protected request:</p>
@@ -94,7 +94,7 @@ export function ApiDocs() {
           </section>
 
           <section id="endpoints">
-            <p className="api-section-kicker">03 Â· ENDPOINTS</p>
+            <p className="api-section-kicker">03 Ã‚Â· ENDPOINTS</p>
             <h2>A compact, versioned surface</h2>
             <div className="api-endpoint-list">
               <div><span className="api-method">GET</span><code>/api/v1/brands</code><p>Search and paginate the catalog.</p></div>
@@ -106,14 +106,14 @@ export function ApiDocs() {
           </section>
 
           <section id="customization">
-            <p className="api-section-kicker">04 Â· CUSTOMIZATION</p>
+            <p className="api-section-kicker">04 Ã‚Â· CUSTOMIZATION</p>
             <h2>Create mono colors and gradients</h2>
             <p>Choose <code>variant=mono</code>, then supply either one six-digit <code>color</code> or both <code>gradientStart</code> and <code>gradientEnd</code>. Hex values should be URL encoded.</p>
             <CodeExample id="customize" label="Download a gradient SVG" />
           </section>
 
           <section id="limits">
-            <p className="api-section-kicker">05 Â· LIMITS AND ERRORS</p>
+            <p className="api-section-kicker">05 Ã‚Â· LIMITS AND ERRORS</p>
             <h2>Observable by default</h2>
             <p>Every authenticated response includes request and quota headers. Use the request ID when reporting an integration problem.</p>
             <div className="api-header-grid">

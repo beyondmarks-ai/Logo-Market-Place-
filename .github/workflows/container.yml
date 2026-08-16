@@ -41,8 +41,3 @@ jobs:
         run: |
           docker push "$IMAGE:latest"
           docker push "$IMAGE:${{ github.sha }}"
-
-      - name: Make package public
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh api --method PATCH "/users/${{ github.repository_owner }}/packages/container/logo-market-place-api" -f visibility=public

@@ -33,10 +33,19 @@ Open [http://localhost:3000](http://localhost:3000), or use another port with `n
 
 Copy `.env.example` to `.env.local` to override defaults. Never put credentials in a `NEXT_PUBLIC_` variable.
 
+## Live deployment
+
+- Marketplace: [https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io](https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io)
+- Developer documentation: [https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/developers](https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/developers)
+- OpenAPI: [https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/openapi](https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/openapi)
+- Health: [https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/health](https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/health)
+
+The Azure Container App uses 0.25 vCPU, 0.5 GiB memory, and scales from zero to three replicas.
+
 ## API quickstart
 
 ```bash
-curl "http://localhost:3000/api/v1/brands?query=microsoft&limit=10" \
+curl "https://logo-marketplace-api.wonderfulplant-f827f144.southindia.azurecontainerapps.io/api/v1/brands?query=microsoft&limit=10" \
   -H "Authorization: Bearer lmp_live_YOUR_API_KEY"
 ```
 
