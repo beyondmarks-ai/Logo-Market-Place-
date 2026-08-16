@@ -16,11 +16,11 @@ const dotVariation = (column: number, row: number) => {
 };
 
 const gradientStops = [
-  { position: 0, color: [255, 255, 255] },
-  { position: 0.32, color: [222, 212, 255] },
-  { position: 0.6, color: [173, 121, 255] },
-  { position: 0.82, color: [227, 126, 216] },
-  { position: 1, color: [255, 176, 140] },
+  { position: 0, color: [5, 4, 5] },
+  { position: 0.32, color: [18, 5, 7] },
+  { position: 0.6, color: [61, 5, 10] },
+  { position: 0.82, color: [146, 9, 20] },
+  { position: 1, color: [255, 63, 76] },
 ] as const;
 
 const gradientColorAt = (progress: number) => {
@@ -142,9 +142,9 @@ export function BackgroundAnimation() {
           const idlePulse = reducedMotion
             ? 0.6
             : 0.48 + Math.sin(time * 0.0015 + column * 0.63 + row * 0.37) * 0.16;
-          const redOpacity =
+          const idleOpacity =
             (0.07 + idlePulse * 0.075) * cornerMask * (1 - activation * 0.82);
-          drawDot(x, y, 1.3, "#d40b2f", redOpacity, 5);
+          drawDot(x, y, 1.3, "#3d050a", idleOpacity, 5);
 
           if (activation > 0.015) {
             const gradientOpacity = smoothstep(0.03, 0.88, activation);

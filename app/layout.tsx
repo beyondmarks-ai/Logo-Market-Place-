@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Beyond Marks AI Academy",
-  description: "Student projects, academy resources, access requests, and administration in one secure workspace.",
+  title: "Logo Market Place",
+  description: "Search, preview, and download thousands of professional SVG brand logos.",
 };
 
 export default function RootLayout({

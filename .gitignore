@@ -9,6 +9,9 @@
 /build
 
 # local environment files
+.env
+.env.*
+!.env.example
 .env*.local
 
 # debug
@@ -19,3 +22,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test and editor output
+/coverage/
+.DS_Store
+.idea/
+.vscode/

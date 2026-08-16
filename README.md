@@ -1,66 +1,68 @@
-# Beyond Marks AI Academy Dashboard
+# Logo Market Place
 
-A Next.js dashboard for managing academy students, project folders, API and Azure resource requests, notifications, certificates, and Azure Foundry-generated folder avatars.
+A production-ready Next.js marketplace for browsing, previewing, customizing, and downloading professional SVG logos.
 
 ## Features
 
-- Student sign-up restricted to administrator-created admission IDs and `@beyondmarks.ai` email addresses
-- Administrator email OTP through Azure Communication Services
-- Student approval workflow and protected four-digit security PIN actions
-- Per-student project folders, links, README notes, screenshots, and academy avatars
-- API and Azure service request catalog
-- Admin student, resource, notification, certificate, and avatar-management screens
-- Automated Azure Foundry `gpt-image-2` avatar generation with a six-per-day limit
+- Searchable, filterable grid of thousands of SVG assets
+- Color, mono, light, dark, wordmark, brand, and cloud categories
+- In-browser solid-color and gradient customization for mono SVGs
+- Same-origin API routes that avoid browser CORS issues
+- Azure Blob Storage as the primary asset source
+- Automatic jsDelivr fallback when Azure is unavailable
+- Responsive red-and-black navigation with a creamy white interface
+- GitHub Actions validation on pushes and pull requests
 
-## Local setup
+## Requirements
 
-Requirements:
+- Node.js 20.9 or newer
+- npm 10 or newer
 
-- Node.js 20 or newer
-- npm
-- Azure CLI signed in to an identity with access to the configured Azure resources
+No Azure credentials are required. The default storage container is publicly readable.
 
-Install dependencies and create the local configuration:
+## Local development
 
-```powershell
-npm install
-Copy-Item .env.example .env.local
-```
-
-Fill in `.env.local`. Never commit this file. Then start the application:
-
-```powershell
+```bash
+npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000). To use another port:
 
-## Validation
-
-```powershell
-npm run check
+```bash
+npm run dev -- --port 3003
 ```
 
-This runs TypeScript validation followed by a production build.
+## Configuration
 
-## Azure configuration
+The application works without a local environment file. To point it at another public logo container, copy `.env.example` to `.env.local` and change:
 
-The server uses `DefaultAzureCredential`, allowing local development through Azure CLI and production through a managed identity. Azure service access is keyless, and administrator/signing secrets are retrieved from Azure Key Vault. Required non-secret settings are documented in [.env.example](.env.example).
+```dotenv
+NEXT_PUBLIC_LOGO_STORAGE_BASE_URL=https://your-account.blob.core.windows.net/your-container
+```
 
-Relevant Azure services:
+The container must provide `catalog.json` at its root and SVG files at the paths listed in that catalog. Because this is a `NEXT_PUBLIC_` variable, do not place credentials or private SAS tokens in it.
 
-- Azure Key Vault for administrator and signing secrets, accessed without vault keys
-- Azure Communication Services and Email Communication Services for administrator OTP
-- Microsoft Foundry/Azure AI Services with a `gpt-image-2` deployment for avatar generation
+## Commands
 
-SMS verification is intentionally disabled until an India-capable sender is configured.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run typecheck` | Run TypeScript validation |
+| `npm run build` | Create a production build |
+| `npm run start` | Serve the production build |
+| `npm run check` | Run type checking and a production build |
 
-## Current storage model
+## Data flow
 
-This repository is a dashboard prototype. Student records, password/PIN hashes, projects, approvals, and generated-avatar metadata currently use browser storage. Before production, move identity and shared state to server-side authentication, the academy database, and Azure Blob Storage.
+The browser requests the catalog through `/api/logos/catalog`. The server first checks Azure Blob Storage and falls back to the upstream collection on jsDelivr. Downloads use `/api/logos/download`, which validates requested paths and applies the same fallback. This keeps cross-origin storage requests out of the browser and prevents the earlier CORS failure.
 
-## Security
+## Deploying from GitHub
 
-- `.env.local` and other local environment variants are ignored by Git.
-- Do not place Azure keys, connection strings, passwords, or production secrets in source files.
-- Use managed identities and Azure RBAC in deployed environments.
+The workflow in `.github/workflows/ci.yml` runs `npm ci`, type checking, and a production build for pull requests and pushes to `main`.
+
+For Vercel, import the GitHub repository and keep the default Next.js settings. For another Node host, build with `npm ci && npm run build` and start with `npm run start`. Add `NEXT_PUBLIC_LOGO_STORAGE_BASE_URL` only when overriding the default public container.
+
+## Asset attribution
+
+The logo catalog is sourced from [glincker/thesvg](https://github.com/glincker/thesvg). Brand names, logos, and trademarks belong to their respective owners; review each brand's usage guidelines before publishing assets.
