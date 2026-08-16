@@ -27,6 +27,7 @@ export default function Home() {
       <BackgroundAnimation />
       <header className={`top-header${headerHidden ? " top-header--hidden" : ""}`}>
         <h1>Logo Market Place</h1>
+        <a className="api-docs-link" href="/developers">API Docs</a>
       </header>
       <Sidebar activeItem={activeItem} onSelectItem={setActiveItem} />
       <LogoCatalog activeFilter={activeItem} />
