@@ -1,11 +1,10 @@
 "use client";
-import Link from "next/link"; import { Check, ShieldCheck, Sparkles } from "lucide-react"; import { useEffect, useState } from "react";
+import Link from "next/link"; import { Check, ShieldCheck, Sparkles } from "lucide-react"; import { useState } from "react";
 type Pack = { id: string; name: string; credits: number; amount: number };
 declare global { interface Window { Razorpay?: new (options: Record<string, unknown>) => { open(): void } } }
 const packs: Pack[] = [{ id: "starter_100", name: "Starter", credits: 100, amount: 9900 }, { id: "builder_500", name: "Builder", credits: 500, amount: 39900 }, { id: "scale_2000", name: "Scale", credits: 2000, amount: 99900 }];
-export function PricingClient({ enabled }: { enabled: boolean }) {
-  const [billingEnabled, setBillingEnabled] = useState(enabled); const [message, setMessage] = useState(""); const [busy, setBusy] = useState("");
-  useEffect(() => { fetch("/api/billing/config", { cache: "no-store" }).then(async (response) => { if (!response.ok) return; const body = await response.json(); setBillingEnabled(Boolean(body.data?.enabled)); }).catch(() => undefined); }, []);
+export function PricingClient() {
+  const [message, setMessage] = useState(""); const [busy, setBusy] = useState("");
   async function buy(pack: Pack) {
     setBusy(pack.id); setMessage("");
     try {
@@ -15,6 +14,6 @@ export function PricingClient({ enabled }: { enabled: boolean }) {
     } catch (error) { setMessage(error instanceof Error ? error.message : "Checkout is unavailable."); } finally { setBusy(""); }
   }
   return <div className="pricing-wrap"><section className="pricing-hero"><p>PREPAID · NO SUBSCRIPTION</p><h1>Simple credits.<br />Only pay when you build.</h1><span>Start with 5 free calls after email verification. Add credits whenever you need them; they never expire.</span></section>
-    <div className="pricing-grid">{packs.map((pack, index) => <article className={index === 1 ? "pricing-card pricing-card--featured" : "pricing-card"} key={pack.id}>{index === 1 && <div className="popular">MOST POPULAR</div>}<div><p>{pack.name}</p><h2>₹{(pack.amount / 100).toLocaleString("en-IN")}</h2><span>inclusive final price</span></div><strong>{pack.credits.toLocaleString()} <small>API calls</small></strong><ul><li><Check />Credits never expire</li><li><Check />Up to 3 API keys</li><li><Check />Full usage ledger</li></ul><button disabled={!billingEnabled || busy === pack.id} onClick={() => buy(pack)}>{busy === pack.id ? "Opening..." : billingEnabled ? "Buy credits" : "Payments coming soon"}</button><small>₹{(pack.amount / pack.credits / 100).toFixed(2)} per call</small></article>)}</div>
+    <div className="pricing-grid">{packs.map((pack, index) => <article className={index === 1 ? "pricing-card pricing-card--featured" : "pricing-card"} key={pack.id}>{index === 1 && <div className="popular">MOST POPULAR</div>}<div><p>{pack.name}</p><h2>₹{(pack.amount / 100).toLocaleString("en-IN")}</h2><span>inclusive final price</span></div><strong>{pack.credits.toLocaleString()} <small>API calls</small></strong><ul><li><Check />Credits never expire</li><li><Check />Up to 3 API keys</li><li><Check />Full usage ledger</li></ul><button disabled={busy === pack.id} onClick={() => buy(pack)}>{busy === pack.id ? "Opening..." : "Buy credits"}</button><small>₹{(pack.amount / pack.credits / 100).toFixed(2)} per call</small></article>)}</div>
     {message && <p className="pricing-message" role="alert">{message}</p>}<section className="pricing-trust"><div><ShieldCheck /><strong>Secure Razorpay checkout</strong><span>Card details never touch our servers.</span></div><div><Sparkles /><strong>5 calls free</strong><span>No card required to start.</span></div><div><Check /><strong>Manual unused-credit refunds</strong><span>Contact support for review.</span></div></section><p className="pricing-fine">Need help? <Link href="mailto:contact@beyondmarks.ai">contact@beyondmarks.ai</Link></p></div>;
 }
