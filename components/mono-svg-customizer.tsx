@@ -8,6 +8,7 @@ type MonoSvgCustomizerProps = {
   slug: string;
   path: string;
   onClose: () => void;
+  onCreditsChange: (credits: number) => void;
 };
 
 type ColorMode = "solid" | "gradient";
@@ -48,7 +49,7 @@ function paintSvg(source: string, mode: ColorMode, solidColor: string, gradientC
   return customized;
 }
 
-export function MonoSvgCustomizer({ title, slug, path, onClose }: MonoSvgCustomizerProps) {
+export function MonoSvgCustomizer({ title, slug, path, onClose, onCreditsChange }: MonoSvgCustomizerProps) {
   const [sourceSvg, setSourceSvg] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -56,6 +57,7 @@ export function MonoSvgCustomizer({ title, slug, path, onClose }: MonoSvgCustomi
   const [solidColor, setSolidColor] = useState("#b70c1b");
   const [gradientColors, setGradientColors] = useState<[string, string]>(["#050405", "#ff3f4c"]);
   const [previewUrl, setPreviewUrl] = useState("");
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -76,7 +78,7 @@ export function MonoSvgCustomizer({ title, slug, path, onClose }: MonoSvgCustomi
       setLoading(true);
       setError("");
       try {
-        const response = await fetch(`/api/logos/download?path=${encodeURIComponent(path)}&name=${encodeURIComponent(slug)}`);
+        const response = await fetch(`/api/logos/preview?path=${encodeURIComponent(path)}`, { cache: "no-store" });
         if (!response.ok) throw new Error("Unable to load this mono SVG.");
         const svg = await response.text();
         if (!cancelled) setSourceSvg(svg);
@@ -105,16 +107,42 @@ export function MonoSvgCustomizer({ title, slug, path, onClose }: MonoSvgCustomi
     return () => URL.revokeObjectURL(url);
   }, [customizedSvg]);
 
-  const downloadCustomizedSvg = () => {
-    if (!customizedSvg) return;
-    const url = URL.createObjectURL(new Blob([customizedSvg], { type: "image/svg+xml" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `${slug}-${mode}.svg`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+  const downloadCustomizedSvg = async () => {
+    if (!customizedSvg || downloading) return;
+    setDownloading(true);
+    setError("");
+    try {
+      const query = new URLSearchParams({ path, name: `${slug}-${mode}` });
+      if (mode === "solid") {
+        query.set("color", solidColor);
+      } else {
+        query.set("gradientStart", gradientColors[0]);
+        query.set("gradientEnd", gradientColors[1]);
+      }
+      const response = await fetch(`/api/logos/download?${query.toString()}`, { method: "POST", cache: "no-store" });
+      const remaining = response.headers.get("X-Credits-Remaining");
+      if (remaining !== null) onCreditsChange(Number(remaining));
+      if (response.status === 401) {
+        window.location.href = "/signin?next=/";
+        return;
+      }
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error?.message || "The customized logo could not be downloaded.");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${slug}-${mode}.svg`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      setError(downloadError instanceof Error ? downloadError.message : "The customized logo could not be downloaded.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -192,8 +220,8 @@ export function MonoSvgCustomizer({ title, slug, path, onClose }: MonoSvgCustomi
 
         <footer>
           <button type="button" onClick={onClose}>Cancel</button>
-          <button type="button" onClick={downloadCustomizedSvg} disabled={!customizedSvg || loading}>
-            <Download aria-hidden="true" /> Download customized SVG
+          <button type="button" onClick={downloadCustomizedSvg} disabled={!customizedSvg || loading || downloading}>
+            <Download aria-hidden="true" /> {downloading ? "Downloading..." : "Download customized SVG · 1 credit"}
           </button>
         </footer>
       </section>

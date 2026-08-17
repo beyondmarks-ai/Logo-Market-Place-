@@ -1,27 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { currentAccount } from "../../../../lib/auth";
+import { getLogoCatalog } from "../../../../lib/logo-service";
 
-const AZURE_BASE = (process.env.NEXT_PUBLIC_LOGO_STORAGE_BASE_URL || "https://logomarketplace617db5.blob.core.windows.net/logos").replace(/\/$/, "");
-const SOURCE_CATALOG = "https://cdn.jsdelivr.net/gh/glincker/thesvg@main/src/data/icons.json";
-
-async function fetchCatalog(url: string) {
+export const runtime = "nodejs";
+export async function GET(request: NextRequest) {
+  const account = await currentAccount(request);
+  if (!account) return NextResponse.json({ error: { code: "authentication_required", message: "Sign in to view the logo marketplace." } }, { status: 401, headers: { "Cache-Control": "no-store" } });
   try {
-    const response = await fetch(url, { next: { revalidate: 3600 } });
-    return response.ok ? response : null;
+    return NextResponse.json(await getLogoCatalog(), { headers: { "Cache-Control": "private, no-store" } });
   } catch {
-    return null;
+    return NextResponse.json({ error: { code: "catalog_unavailable", message: "Logo catalog is temporarily unavailable." } }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
-}
-
-export async function GET() {
-  const response = await fetchCatalog(`${AZURE_BASE}/catalog.json`) ?? await fetchCatalog(SOURCE_CATALOG);
-  if (!response) {
-    return NextResponse.json({ error: "Logo catalog is unavailable." }, { status: 502 });
-  }
-
-  return new NextResponse(response.body, {
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
-    },
-  });
 }

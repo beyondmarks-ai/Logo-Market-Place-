@@ -15,9 +15,9 @@ type LogoRecord = {
 
 type LogoCatalogProps = {
   activeFilter: string;
+  onCreditsChange: (credits: number) => void;
 };
 
-const AZURE_BASE = (process.env.NEXT_PUBLIC_LOGO_STORAGE_BASE_URL || "https://logomarketplace617db5.blob.core.windows.net/logos").replace(/\/$/, "");
 const PAGE_SIZE = 72;
 
 function matchesFilter(logo: LogoRecord, filter: string) {
@@ -65,13 +65,15 @@ function assetPath(logo: LogoRecord, filter: string) {
   return source.replace(/^\/icons\//, "");
 }
 
-export function LogoCatalog({ activeFilter }: LogoCatalogProps) {
+export function LogoCatalog({ activeFilter, onCreditsChange }: LogoCatalogProps) {
   const [logos, setLogos] = useState<LogoRecord[]>([]);
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedMono, setSelectedMono] = useState<{ logo: LogoRecord; path: string } | null>(null);
+  const [downloading, setDownloading] = useState("");
+  const [downloadMessage, setDownloadMessage] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +121,26 @@ export function LogoCatalog({ activeFilter }: LogoCatalogProps) {
     setVisibleCount(PAGE_SIZE);
   };
 
+  async function downloadLogo(logo: LogoRecord, path: string) {
+    setDownloading(logo.slug);
+    setDownloadMessage("");
+    try {
+      const response = await fetch(`/api/logos/download?path=${encodeURIComponent(path)}&name=${encodeURIComponent(logo.slug)}`, { method: "POST", cache: "no-store" });
+      const remaining = response.headers.get("X-Credits-Remaining");
+      if (remaining !== null) onCreditsChange(Number(remaining));
+      if (response.status === 401) { window.location.href = "/signin?next=/"; return; }
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error?.message || "The logo could not be downloaded.");
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url; anchor.download = `${logo.slug}.svg`; document.body.appendChild(anchor); anchor.click(); anchor.remove(); URL.revokeObjectURL(url);
+      setDownloadMessage(`${logo.title} downloaded. 1 credit used.`);
+    } catch (downloadError) {
+      setDownloadMessage(downloadError instanceof Error ? downloadError.message : "The logo could not be downloaded.");
+    } finally { setDownloading(""); }
+  }
   return (
     <section className="logo-catalog" aria-labelledby="catalog-title">
       <div className="catalog-intro">
@@ -148,11 +170,12 @@ export function LogoCatalog({ activeFilter }: LogoCatalogProps) {
       {error && <div className="catalog-status catalog-status--error">{error}</div>}
       {!loading && !error && visibleLogos.length === 0 && <div className="catalog-status">No logos match &quot;{query}&quot;.</div>}
 
-      <div className="logo-grid" aria-live="polite">
+      {downloadMessage && <div className="catalog-download-status" role="status">{downloadMessage}</div>}
+
+      <div className="logo-grid" aria-live="polite" aria-busy={Boolean(downloading)}>
         {visibleLogos.map((logo) => {
           const path = assetPath(logo, activeFilter);
-          const azureUrl = `${AZURE_BASE}/${path}`;
-          const sourceUrl = `https://cdn.jsdelivr.net/gh/glincker/thesvg@main/public/icons/${path}`;
+          const previewUrl = `/api/logos/preview?path=${encodeURIComponent(path)}`;
           return (
             <article className="logo-card" key={logo.slug}>
               {activeFilter === "Mono SVG" ? (
@@ -163,26 +186,20 @@ export function LogoCatalog({ activeFilter }: LogoCatalogProps) {
                   aria-label={`Customize ${logo.title} mono SVG`}
                 >
                   <img
-                    src={azureUrl}
+                    src={previewUrl}
                     alt={`${logo.title} logo`}
                     loading="lazy"
                     decoding="async"
-                    onError={(event) => {
-                      if (event.currentTarget.src !== sourceUrl) event.currentTarget.src = sourceUrl;
-                    }}
                   />
                   <span>Customize colors</span>
                 </button>
               ) : (
                 <div className="logo-preview">
                   <img
-                    src={azureUrl}
+                    src={previewUrl}
                     alt={`${logo.title} logo`}
                     loading="lazy"
                     decoding="async"
-                    onError={(event) => {
-                      if (event.currentTarget.src !== sourceUrl) event.currentTarget.src = sourceUrl;
-                    }}
                   />
                 </div>
               )}
@@ -202,13 +219,16 @@ export function LogoCatalog({ activeFilter }: LogoCatalogProps) {
                     <Palette aria-hidden="true" />
                   </button>
                 ) : (
-                  <a
-                    href={`/api/logos/download?path=${encodeURIComponent(path)}&name=${encodeURIComponent(logo.slug)}`}
-                    aria-label={`Download ${logo.title} as SVG`}
-                    title={`Download ${logo.title}`}
+                  <button
+                    className="logo-customize-button"
+                    type="button"
+                    onClick={() => downloadLogo(logo, path)}
+                    disabled={downloading === logo.slug}
+                    aria-label={`Download ${logo.title} as SVG for 1 credit`}
+                    title={`Download ${logo.title} · 1 credit`}
                   >
                     <Download aria-hidden="true" />
-                  </a>
+                  </button>
                 )}
               </div>
             </article>
@@ -229,6 +249,7 @@ export function LogoCatalog({ activeFilter }: LogoCatalogProps) {
           slug={selectedMono.logo.slug}
           path={selectedMono.path}
           onClose={() => setSelectedMono(null)}
+          onCreditsChange={onCreditsChange}
         />
       )}
     </section>

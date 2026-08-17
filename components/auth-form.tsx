@@ -11,7 +11,7 @@ export function AuthForm({ mode, token = "" }: { mode: Mode; token?: string }) {
     try {
       const response = await fetch(`/api/account/${endpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...data, token }) });
       const body = await response.json(); if (!response.ok) throw new Error(body.error?.message || "Something went wrong.");
-      if (mode === "signin") { window.location.href = "/dashboard"; return; }
+      if (mode === "signin") { const next = new URLSearchParams(window.location.search).get("next"); window.location.href = next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard"; return; }
       setMessage(body.data?.message || "Done.");
       if (body.data?.previewUrl) setMessage(`${body.data.message} Development link: ${body.data.previewUrl}`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Something went wrong."); } finally { setBusy(false); }
