@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiHeaders, apiOptions, authorizeApiRequest } from "../../../../../lib/api-auth";
+import { apiHeaders, apiOptions, authorizeApiRequest, finalizeApiResponse } from "../../../../../lib/api-auth";
 import { findLogo, getLogoCatalog } from "../../../../../lib/logo-service";
 
 export const runtime = "nodejs";
@@ -36,6 +36,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       meta: { requestId: auth.context.requestId },
     }, { headers });
   } catch {
-    return NextResponse.json({ error: { code: "catalog_unavailable", message: "The logo catalog is temporarily unavailable.", requestId: auth.context.requestId } }, { status: 503, headers });
+    return finalizeApiResponse(NextResponse.json({ error: { code: "catalog_unavailable", message: "The logo catalog is temporarily unavailable.", requestId: auth.context.requestId } }, { status: 503, headers }), auth.context);
   }
 }

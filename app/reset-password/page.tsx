@@ -1,0 +1,2 @@
+import { AccountNav } from "../../components/account-nav"; import { AuthForm } from "../../components/auth-form"; import { BackgroundAnimation } from "../../components/background-animation";
+export default async function ResetPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) { const { token } = await searchParams; return <main className="account-shell"><BackgroundAnimation /><AccountNav /><AuthForm mode="reset" token={token || ""} /></main>; }

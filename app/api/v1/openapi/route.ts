@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
             { name: "limit", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 20 } },
             { name: "cursor", in: "query", schema: { type: "string" }, description: "Opaque cursor returned by the previous page" },
           ],
-          responses: { "200": { description: "Paginated brand results" }, "401": { $ref: "#/components/responses/Unauthorized" }, "429": { $ref: "#/components/responses/RateLimited" } },
+          responses: { "200": { description: "Paginated brand results" }, "401": { $ref: "#/components/responses/Unauthorized" }, "402": { description: "Credit balance exhausted" }, "429": { $ref: "#/components/responses/RateLimited" } },
         },
       },
       "/api/v1/brands/{slug}": {
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       },
       responses: {
         Unauthorized: { description: "Missing, invalid, expired, or revoked API key" },
-        RateLimited: { description: "Per-minute or monthly request quota exceeded" },
+        RateLimited: { description: "Per-minute request rate exceeded" },
       },
     },
   };

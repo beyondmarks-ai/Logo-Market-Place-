@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiHeaders, apiOptions, authorizeApiRequest } from "../../../../../../lib/api-auth";
+import { apiHeaders, apiOptions, authorizeApiRequest, finalizeApiResponse } from "../../../../../../lib/api-auth";
 import { fetchLogoAsset, findLogo, getLogoCatalog, logoVariantPath } from "../../../../../../lib/logo-service";
 import { customizeSvg, isHexColor, type SvgColorOptions } from "../../../../../../lib/svg-customize";
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const asset = await fetchLogoAsset(path);
     if (!asset) {
-      return NextResponse.json({ error: { code: "asset_unavailable", message: "The requested SVG is temporarily unavailable.", requestId: auth.context.requestId } }, { status: 503, headers });
+      return finalizeApiResponse(NextResponse.json({ error: { code: "asset_unavailable", message: "The requested SVG is temporarily unavailable.", requestId: auth.context.requestId } }, { status: 503, headers }), auth.context);
     }
     const suffix = colorOptions.mode === "original" ? variant : colorOptions.mode;
     const fileName = `${logo.slug}-${suffix}.svg`;
@@ -62,6 +62,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const customized = customizeSvg(await asset.text(), colorOptions);
     return new NextResponse(customized, { headers: responseHeaders });
   } catch {
-    return NextResponse.json({ error: { code: "download_unavailable", message: "The logo download is temporarily unavailable.", requestId: auth.context.requestId } }, { status: 503, headers });
+    return finalizeApiResponse(NextResponse.json({ error: { code: "download_unavailable", message: "The logo download is temporarily unavailable.", requestId: auth.context.requestId } }, { status: 503, headers }), auth.context);
   }
 }

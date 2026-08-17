@@ -1,0 +1,3 @@
+import { redirect } from "next/navigation"; import { currentAccount } from "../../lib/auth"; import { getCreditBalance, listLedger } from "../../lib/credits"; import { listAccountKeys } from "../../lib/account-api-keys"; import { DashboardClient } from "../../components/dashboard-client";
+export const dynamic = "force-dynamic";
+export default async function DashboardPage() { const account = await currentAccount(); if (!account) redirect("/signin"); const [credits, keys, ledger] = await Promise.all([getCreditBalance(account.userId), listAccountKeys(account.userId), listLedger(account.userId)]); return <DashboardClient email={account.email} role={account.role} initialCredits={credits} initialKeys={keys} initialLedger={ledger} />; }

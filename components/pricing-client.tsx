@@ -1,0 +1,19 @@
+"use client";
+import Link from "next/link"; import { Check, ShieldCheck, Sparkles } from "lucide-react"; import { useState } from "react";
+type Pack = { id: string; name: string; credits: number; amount: number };
+declare global { interface Window { Razorpay?: new (options: Record<string, unknown>) => { open(): void } } }
+const packs: Pack[] = [{ id: "starter_100", name: "Starter", credits: 100, amount: 9900 }, { id: "builder_500", name: "Builder", credits: 500, amount: 39900 }, { id: "scale_2000", name: "Scale", credits: 2000, amount: 99900 }];
+export function PricingClient({ enabled }: { enabled: boolean }) {
+  const [message, setMessage] = useState(""); const [busy, setBusy] = useState("");
+  async function buy(pack: Pack) {
+    setBusy(pack.id); setMessage("");
+    try {
+      if (!window.Razorpay) { await new Promise<void>((resolve, reject) => { const script = document.createElement("script"); script.src = "https://checkout.razorpay.com/v1/checkout.js"; script.onload = () => resolve(); script.onerror = () => reject(new Error("Checkout could not load.")); document.head.appendChild(script); }); }
+      const response = await fetch("/api/billing/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ packId: pack.id }) }); const body = await response.json(); if (response.status === 401) { window.location.href = "/signin"; return; } if (!response.ok) throw new Error(body.error?.message);
+      const order = body.data; new window.Razorpay!({ key: order.keyId, amount: order.amount, currency: order.currency, name: "Logo Market Place", description: `${pack.credits.toLocaleString()} API credits`, order_id: order.orderId, theme: { color: "#b31320" }, handler: async (payment: Record<string, string>) => { const verify = await fetch("/api/billing/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payment) }); if (!verify.ok) { setMessage("Payment received, but verification is pending. Contact support."); return; } window.location.href = "/dashboard"; } }).open();
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Checkout is unavailable."); } finally { setBusy(""); }
+  }
+  return <div className="pricing-wrap"><section className="pricing-hero"><p>PREPAID · NO SUBSCRIPTION</p><h1>Simple credits.<br />Only pay when you build.</h1><span>Start with 5 free calls after email verification. Add credits whenever you need them; they never expire.</span></section>
+    <div className="pricing-grid">{packs.map((pack, index) => <article className={index === 1 ? "pricing-card pricing-card--featured" : "pricing-card"} key={pack.id}>{index === 1 && <div className="popular">MOST POPULAR</div>}<div><p>{pack.name}</p><h2>₹{(pack.amount / 100).toLocaleString("en-IN")}</h2><span>inclusive final price</span></div><strong>{pack.credits.toLocaleString()} <small>API calls</small></strong><ul><li><Check />Credits never expire</li><li><Check />Up to 3 API keys</li><li><Check />Full usage ledger</li></ul><button disabled={!enabled || busy === pack.id} onClick={() => buy(pack)}>{busy === pack.id ? "Opening..." : enabled ? "Buy credits" : "Payments coming soon"}</button><small>₹{(pack.amount / pack.credits / 100).toFixed(2)} per call</small></article>)}</div>
+    {message && <p className="pricing-message" role="alert">{message}</p>}<section className="pricing-trust"><div><ShieldCheck /><strong>Secure Razorpay checkout</strong><span>Card details never touch our servers.</span></div><div><Sparkles /><strong>5 calls free</strong><span>No card required to start.</span></div><div><Check /><strong>Manual unused-credit refunds</strong><span>Contact support for review.</span></div></section><p className="pricing-fine">Need help? <Link href="mailto:contact@beyondmarks.ai">contact@beyondmarks.ai</Link></p></div>;
+}

@@ -1,0 +1,2 @@
+import { AccountNav } from "../../components/account-nav"; import { BackgroundAnimation } from "../../components/background-animation"; import { VerifyEmail } from "../../components/verify-email";
+export default async function VerifyPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) { const { token } = await searchParams; return <main className="account-shell"><BackgroundAnimation /><AccountNav /><VerifyEmail token={token || ""} /></main>; }

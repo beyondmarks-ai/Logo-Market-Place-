@@ -52,9 +52,9 @@ export function ApiDocs() {
 
       <section className="api-docs-hero" aria-labelledby="api-title">
         <div>
-          <p className="api-eyebrow">DEVELOPER PLATFORM Ã‚Â· V1</p>
+          <p className="api-eyebrow">DEVELOPER PLATFORM · V1</p>
           <h1 id="api-title">Brand assets through one reliable API.</h1>
-          <p>Search the catalog, inspect available variants, and download production-ready SVGsÃ¢â‚¬â€including custom mono colors and gradients.</p>
+          <p>Search the catalog, inspect available variants, and download production-ready SVGs—including custom mono colors and gradients.</p>
           <div className="api-hero-actions">
             <a href="#quickstart">Start integrating</a>
             <a href="/api/v1/health" target="_blank" rel="noreferrer">Check API status</a>
@@ -62,7 +62,7 @@ export function ApiDocs() {
         </div>
         <aside aria-label="API overview">
           <div><ShieldCheck aria-hidden="true" /><span><strong>Bearer authentication</strong>SHA-256 hashed keys</span></div>
-          <div><Gauge aria-hidden="true" /><span><strong>Predictable quotas</strong>Minute and monthly limits</span></div>
+          <div><Gauge aria-hidden="true" /><span><strong>Prepaid usage</strong>One credit per valid request</span></div>
           <div><Code2 aria-hidden="true" /><span><strong>Stable contract</strong>Versioned JSON endpoints</span></div>
         </aside>
       </section>
@@ -79,14 +79,14 @@ export function ApiDocs() {
 
         <article className="api-docs-content">
           <section id="quickstart">
-            <p className="api-section-kicker">01 Ã‚Â· QUICKSTART</p>
+            <p className="api-section-kicker">01 · QUICKSTART</p>
             <h2>Find a brand in seconds</h2>
             <p>Send your API key from a trusted server environment. Search accepts brand names, aliases, categories, and keywords.</p>
             <CodeExample id="search" label="Search brands" />
           </section>
 
           <section id="authentication">
-            <p className="api-section-kicker">02 Ã‚Â· AUTHENTICATION</p>
+            <p className="api-section-kicker">02 · AUTHENTICATION</p>
             <h2>Use a Bearer API key</h2>
             <div className="api-notice"><KeyRound aria-hidden="true" /><p><strong>Keep keys server-side.</strong> Never embed a live key in browser JavaScript, mobile bundles, or public repositories.</p></div>
             <p>Include the key on every protected request:</p>
@@ -94,7 +94,7 @@ export function ApiDocs() {
           </section>
 
           <section id="endpoints">
-            <p className="api-section-kicker">03 Ã‚Â· ENDPOINTS</p>
+            <p className="api-section-kicker">03 · ENDPOINTS</p>
             <h2>A compact, versioned surface</h2>
             <div className="api-endpoint-list">
               <div><span className="api-method">GET</span><code>/api/v1/brands</code><p>Search and paginate the catalog.</p></div>
@@ -106,16 +106,16 @@ export function ApiDocs() {
           </section>
 
           <section id="customization">
-            <p className="api-section-kicker">04 Ã‚Â· CUSTOMIZATION</p>
+            <p className="api-section-kicker">04 · CUSTOMIZATION</p>
             <h2>Create mono colors and gradients</h2>
             <p>Choose <code>variant=mono</code>, then supply either one six-digit <code>color</code> or both <code>gradientStart</code> and <code>gradientEnd</code>. Hex values should be URL encoded.</p>
             <CodeExample id="customize" label="Download a gradient SVG" />
           </section>
 
           <section id="limits">
-            <p className="api-section-kicker">05 Ã‚Â· LIMITS AND ERRORS</p>
+            <p className="api-section-kicker">05 · LIMITS AND ERRORS</p>
             <h2>Observable by default</h2>
-            <p>Every authenticated response includes request and quota headers. Use the request ID when reporting an integration problem.</p>
+            <p>Every authenticated response includes request, rate-limit, and remaining-credit headers. Use the request ID when reporting an integration problem.</p>
             <div className="api-header-grid">
               <code>X-Request-Id</code><span>Trace identifier</span>
               <code>RateLimit-Remaining</code><span>Requests left this minute</span>
